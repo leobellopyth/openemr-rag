@@ -575,12 +575,12 @@
         </div>
         <div class="header-controls">
             <div class="mode-toggle">
-                <button class="mode-btn active" data-mode="demo">Demo</button>
-                <button class="mode-btn" data-mode="live">Live</button>
+                <button class="mode-btn" data-mode="demo">Demo</button>
+                <button class="mode-btn active" data-mode="live">Live</button>
             </div>
             <div class="connection-status">
-                <div class="status-dot"></div>
-                <span class="status-text">Demo Mode</span>
+                <div class="status-dot connecting"></div>
+                <span class="status-text">Connecting...</span>
             </div>
         </div>
     </header>
@@ -712,7 +712,7 @@
 
         // State
         let currentPatient = null;
-        let mode = 'demo';
+        let mode = 'live';
         let isLoading = false;
 
         // DOM Elements
@@ -1291,9 +1291,10 @@ ALLERGIES: ${allergies}
             }
         }
 
-        // Auto-load patient list when DOM is ready
-        document.addEventListener('DOMContentLoaded', () => {
-            if (mode === 'demo') {
+        // Auto-connect and load patients when DOM is ready
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (mode === 'live') {
+                await updateConnectionStatus();
                 searchPatients();
             }
         });
