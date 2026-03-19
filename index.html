@@ -589,7 +589,12 @@
         <section class="chat-panel">
             <div class="chat-header">
                 <h2>Clinical Assistant</h2>
-                <button class="quick-btn" id="clearBtn" style="border: none; color: var(--text-muted);">Clear</button>
+                <div style="display: flex; gap: 8px;">
+                    <button class="quick-btn" id="soapBtn" style="border: none; background: #EBF5FF; color: var(--primary);">
+                        <span>+</span> SOAP Note
+                    </button>
+                    <button class="quick-btn" id="clearBtn" style="border: none; color: var(--text-muted);">Clear</button>
+                </div>
             </div>
 
             <div class="chat-messages" id="chatMessages">
@@ -749,6 +754,10 @@
                 runAnalysis(analysisType);
             });
         });
+
+        // SOAP Note button
+        const soapBtn = document.getElementById('soapBtn');
+        soapBtn.addEventListener('click', generateSOAPNote);
 
         // Functions
         function showToast(message, type = 'info') {
@@ -1097,6 +1106,95 @@
                     Welcome to Clinical Decision Support. Select a patient to begin, then ask me any clinical questions.
                 </div>
             `;
+        }
+
+        function generateSOAPNote() {
+            if (!currentPatient) {
+                showToast('Please select a patient first', 'error');
+                return;
+            }
+
+            const now = new Date().toLocaleString();
+            let meds = currentPatient.medications?.map(m => `- ${m.drug || m.drug_name || 'Unknown'} ${m.dosage || ''}`).join('\n') || 'None documented';
+            let conditions = currentPatient.conditions?.map(c => `- ${c.title} (${c.diagnosis})`).join('\n') || 'None documented';
+            let allergies = currentPatient.allergies?.map(a => `- ${a.title} (${a.reaction || 'reaction unknown'})`).join('\n') || 'NKDA';
+            
+            // Get latest vitals
+            let vitals = '';
+            if (currentPatient.vitals && currentPatient.vitals.length > 0) {
+                const v = currentPatient.vitals[0];
+                vitals = `BP: ${v.bps || '-'}/${v.bpd || '-'} mmHg | HR: ${v.pulse || '-'} bpm | SpO2: ${v.oxygen_saturation || '-'}%`;
+            } else {
+                vitals = 'Not available';
+            }
+
+            const soapNote = `
+================================================================================
+CLINICAL ENCOUNTER NOTE - ${now}
+================================================================================
+
+PATIENT: ${currentPatient.name || 'Unknown'}
+DOB: ${currentPatient.birthDate || 'Unknown'} | Gender: ${currentPatient.gender || 'Unknown'}
+
+--------------------------------------------------------------------------------
+SUBJECTIVE (S)
+--------------------------------------------------------------------------------
+Chief Complaint:
+
+
+History of Present Illness:
+
+
+Review of Systems:
+
+
+--------------------------------------------------------------------------------
+OBJECTIVE (O)
+--------------------------------------------------------------------------------
+Vitals (${currentPatient.vitals?.[0]?.date || 'Latest'}): ${vitals}
+
+Physical Exam:
+
+
+--------------------------------------------------------------------------------
+ASSESSMENT (A)
+--------------------------------------------------------------------------------
+Active Diagnoses:
+${conditions}
+
+Clinical Impression:
+
+
+--------------------------------------------------------------------------------
+PLAN (P)
+--------------------------------------------------------------------------------
+Medications:
+${meds}
+
+Orders:
+
+Follow-up:
+
+
+================================================================================
+ALLERGIES: ${allergies}
+================================================================================
+`;
+
+            addMessage('SOAP Note Generated:', 'ai');
+            
+            // Add formatted SOAP note as user message
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'message user';
+            msgDiv.style.whiteSpace = 'pre-wrap';
+            msgDiv.style.fontFamily = 'monospace';
+            msgDiv.style.fontSize = '12px';
+            msgDiv.style.maxWidth = '95%';
+            msgDiv.textContent = soapNote;
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            showToast('SOAP Note generated', 'success');
         }
 
         async function updateConnectionStatus() {
