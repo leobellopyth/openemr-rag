@@ -200,16 +200,16 @@ def list_patients():
             patients = [p for p in patients if 
                        search in p.get('name', '').lower() or 
                        search in str(p.get('id', ''))]
-        return jsonify(patients)
+        return jsonify({"patients": patients, "total": len(patients)})
     
     # Live mode - search via API
-    client = OpenEMRClient()
-    # Get all patients (simplified - in production would use proper search)
     patients = []
-    for pid in range(1, 100):  # Demo search first 100 IDs
+    total = 0
+    for pid in range(1, 200):  # Search first 200 IDs
         try:
             resp = requests.get(f"http://localhost:{OPENEMR_API_PORT}/api/patient/{pid}", timeout=2)
             if resp.status_code == 200:
+                total += 1
                 data = resp.json()
                 name = data.get('name', {})
                 full_name = f"{name.get('given', '')} {name.get('family', '')}".lower()
@@ -222,7 +222,7 @@ def list_patients():
                     })
         except:
             pass
-    return jsonify(patients)
+    return jsonify({"patients": patients, "total": total})
 
 @app.route('/query', methods=['POST'])
 def clinical_query():

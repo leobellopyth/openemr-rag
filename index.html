@@ -317,6 +317,15 @@
 
         .patient-list.visible { display: block; }
 
+        .patient-count {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            padding: 8px 12px;
+            background: var(--bg);
+            border-radius: 6px;
+        }
+
         .patient-list-item {
             padding: 12px 16px;
             border: 1px solid var(--border);
@@ -565,6 +574,7 @@
                 <input type="text" id="patientSearch" placeholder="Search by name or ID...">
                 <button class="search-btn" id="searchBtn">Go</button>
             </div>
+            <div id="patientCount" class="patient-count"></div>
             
             <div id="patientList" class="patient-list"></div>
 
@@ -860,7 +870,6 @@
         async function searchPatients() {
             const searchTerm = patientSearchInput.value.trim();
             
-            // Filter demo patients by search term
             let patients = [];
             
             if (mode === 'demo') {
@@ -873,22 +882,34 @@
                 } else {
                     patients = allDemo;
                 }
+                renderPatientList(patients);
             } else {
                 // Live mode - fetch from API
                 try {
                     const res = await fetch(`${API_URL}/patients?mode=live&search=${encodeURIComponent(searchTerm)}`);
                     if (res.ok) {
-                        patients = await res.json();
+                        const data = await res.json();
+                        patients = data.patients || [];
+                        // Show total available if not searching
+                        const totalCount = document.getElementById('patientCount');
+                        if (!searchTerm) {
+                            totalCount.textContent = `${patients.length} patients in system (showing first ${patients.length})`;
+                        }
+                        renderPatientList(patients);
                     }
                 } catch (e) {
                     console.error(e);
+                    const totalCount = document.getElementById('patientCount');
+                    totalCount.textContent = 'Error connecting to server';
                 }
             }
-            
-            renderPatientList(patients);
         }
 
         function renderPatientList(patients) {
+            // Update count
+            const patientCount = document.getElementById('patientCount');
+            patientCount.textContent = `${patients.length} patient${patients.length !== 1 ? 's' : ''} found`;
+            
             if (patients.length === 0) {
                 patientList.classList.remove('visible');
                 patientList.innerHTML = '';
