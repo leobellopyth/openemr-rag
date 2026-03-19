@@ -400,6 +400,28 @@
             background: var(--bg);
             align-self: flex-start;
             border-bottom-left-radius: 4px;
+            max-width: 95%;
+        }
+
+        .message.ai p {
+            margin: 0 0 12px 0;
+        }
+
+        .message.ai p:last-child {
+            margin-bottom: 0;
+        }
+
+        .message.ai strong {
+            color: var(--primary);
+        }
+
+        .message.ai ul, .message.ai ol {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+
+        .message.ai li {
+            margin: 4px 0;
         }
 
         .message.user {
@@ -979,9 +1001,50 @@
         function addMessage(text, type) {
             const msg = document.createElement('div');
             msg.className = `message ${type}`;
-            msg.textContent = text;
+            
+            if (type === 'ai') {
+                // Clean and format AI response
+                msg.innerHTML = formatAIResponse(text);
+            } else {
+                msg.textContent = text;
+            }
+            
             chatMessages.appendChild(msg);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function formatAIResponse(text) {
+            if (!text) return '<p>No response available.</p>';
+            
+            // Clean up markdown-style formatting
+            let formatted = text
+                // Remove asterisks around single words (but keep lists)
+                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+                // Clean up excessive newlines
+                .replace(/\n{3,}/g, '\n\n')
+                // Convert numbered lists
+                .replace(/(\d+)\.\s*\*\*(.+?)\*\*/g, '<p><strong>$1. $2</strong></p>')
+                // Convert bullet points
+                .replace(/^\s*[-*]\s+/gm, '• ')
+                // Split into paragraphs
+                .split('\n\n')
+                .map(p => p.trim())
+                .filter(p => p.length > 0)
+                .map(p => {
+                    // If it looks like a list, wrap properly
+                    if (p.includes('•') || /^\d+\./.test(p)) {
+                        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+                    }
+                    // If it's a heading-like line, make it bold
+                    if (p.length < 100 && p.includes(':')) {
+                        return `<p><strong>${p}</strong></p>`;
+                    }
+                    return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+                })
+                .join('');
+            
+            return formatted || `<p>${text}</p>`;
         }
 
         function addLoadingMessage() {
@@ -1051,39 +1114,38 @@
             if (q.includes('vital') || q.includes('blood pressure') || q.includes('heart rate')) {
                 if (!patient) return 'Please select a patient first.';
                 const v = patient.vitals[0];
-                return `Based on ${patient.name}'s latest vitals:\n\n` +
-                    `- Blood Pressure: ${v.bps}/${v.bpd} mmHg ${getVitalClass(v.bps, 'bps').includes('warning') ? '(slightly elevated)' : ''}\n` +
-                    `- Heart Rate: ${v.pulse} bpm\n` +
-                    `- Oxygen Saturation: ${v.oxygen_saturation}%\n\n` +
-                    `${parseInt(v.bps) > 140 ? 'Consider monitoring BP more closely.' : 'Vitals appear within acceptable range.'}`;
+                const bpClass = getVitalClass(v.bps, 'bps');
+                const status = bpClass.includes('critical') ? 'Elevated - requires attention' : 
+                              bpClass.includes('warning') ? 'Slightly elevated' : 'Within normal range';
+                return `Vitals for ${patient.name}:\n\n` +
+                    `Blood Pressure: ${v.bps}/${v.bpd} mmHg (${status})\n` +
+                    `Heart Rate: ${v.pulse} bpm\n` +
+                    `Oxygen Saturation: ${v.oxygen_saturation}%\n\n` +
+                    `Recommendation: ${bpClass.includes('critical') ? 'BP requires clinical review' : 'Monitor as appropriate'}`;
             }
             
             if (q.includes('medication') || q.includes('drug') || q.includes('prescription')) {
                 if (!patient) return 'Please select a patient first.';
-                const meds = patient.medications.map(m => `- ${m.drug} (${m.dosage})`).join('\n');
-                return `Current medications for ${patient.name}:\n\n${meds}\n\n` +
-                    `Consider reviewing for interactions or appropriateness.`;
+                const meds = patient.medications.map(m => `${m.drug} ${m.dosage}`).join('\n');
+                return `Medications for ${patient.name}:\n\n${meds}\n\nReview for interactions and appropriateness.`;
             }
             
             if (q.includes('risk')) {
                 if (!patient) return 'Please select a patient first.';
                 const conditions = patient.conditions.map(c => c.title).join(', ');
-                return `Risk assessment for ${patient.name}:\n\n` +
-                    `Active conditions: ${conditions || 'None documented'}\n\n` +
-                    `Recommend comprehensive review of chronic disease management and preventive care needs.`;
+                return `Risk Assessment:\n\nActive conditions: ${conditions || 'None documented'}\n\nRecommend review of chronic disease management.`;
             }
             
             if (q.includes('allergy') || q.includes('allergic')) {
                 if (!patient) return 'Please select a patient first.';
                 if (patient.allergies.length === 0) {
-                    return `${patient.name} has no documented allergies.`;
+                    return `${patient.name}: No known allergies documented.`;
                 }
-                const allergies = patient.allergies.map(a => `- ${a.title} (reaction: ${a.reaction})`).join('\n');
-                return `Documented allergies for ${patient.name}:\n\n${allergies}\n\n` +
-                    `Ensure allergy documented in all prescriptions and procedures.`;
+                const allergies = patient.allergies.map(a => `${a.title} - ${a.reaction}`).join('\n');
+                return `Allergies for ${patient.name}:\n\n${allergies}\n\nEnsure documented in all orders.`;
             }
 
-            return `This is a demo response. For full AI analysis, connect to the live backend server running on port 3002.`;
+            return `Demo mode. For AI analysis, switch to Live mode with backend running.`;
         }
 
         async function runAnalysis(type) {
