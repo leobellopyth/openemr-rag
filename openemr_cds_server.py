@@ -19,7 +19,7 @@ CORS(app)
 # Configuration
 OPENEMR_HOST = "16.58.52.89"
 OPENEMR_API_PORT = 3001
-SERVER_PORT = 3002
+SERVER_PORT = 3005
 
 # Global state
 ssh_tunnel_process = None
@@ -158,7 +158,40 @@ DEMO_PATIENTS = {
 # Routes
 @app.route('/health', methods=['GET'])
 def health():
-    return jsonify({"status": "ok", "mode": "live" if ssh_tunnel_process else "demo"})
+    return jsonify({
+        "status": "ok", 
+        "mode": "live" if ssh_tunnel_process else "demo",
+        "tunnel_active": ssh_tunnel_process is not None
+    })
+
+@app.route('/debug', methods=['GET'])
+def debug():
+    """Debug endpoint to test connectivity."""
+    import socket
+    results = {
+        "tunnel_active": ssh_tunnel_process is not None,
+        "localhost_3001_open": False,
+        "test_response": None
+    }
+    
+    # Check if port 3001 is listening
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(2)
+    try:
+        result = sock.connect_ex(('127.0.0.1', OPENEMR_API_PORT))
+        results["localhost_3001_open"] = (result == 0)
+        sock.close()
+    except:
+        pass
+    
+    # Try to make a test request
+    try:
+        resp = requests.get(f"http://localhost:{OPENEMR_API_PORT}/api/patient/1", timeout=5)
+        results["test_response"] = {"status": resp.status_code, "data": resp.json()}
+    except Exception as e:
+        results["test_error"] = str(e)[:200]
+    
+    return jsonify(results)
 
 @app.route('/connect', methods=['POST'])
 def connect():
@@ -205,9 +238,12 @@ def list_patients():
     # Live mode - search via API
     patients = []
     total = 0
-    for pid in range(1, 200):  # Search first 200 IDs
+    errors = []
+    
+    for pid in range(1, 50):  # Search first 50 IDs (reduced for speed)
         try:
-            resp = requests.get(f"http://localhost:{OPENEMR_API_PORT}/api/patient/{pid}", timeout=2)
+            url = f"http://localhost:{OPENEMR_API_PORT}/api/patient/{pid}"
+            resp = requests.get(url, timeout=5)
             if resp.status_code == 200:
                 total += 1
                 data = resp.json()
@@ -220,9 +256,12 @@ def list_patients():
                         "birthDate": str(data.get("birthDate", ""))[:10] if data.get("birthDate") else None,
                         "gender": data.get("gender", "unknown")
                     })
-        except:
-            pass
-    return jsonify({"patients": patients, "total": total})
+        except Exception as e:
+            errors.append(f"PID {pid}: {str(e)[:50]}")
+            if len(errors) > 5:
+                break
+    
+    return jsonify({"patients": patients, "total": total, "errors": errors[:3]})
 
 @app.route('/query', methods=['POST'])
 def clinical_query():

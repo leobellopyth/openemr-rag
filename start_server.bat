@@ -6,8 +6,8 @@ echo ========================================
 echo  OpenEMR Clinical Decision Support Server
 echo ========================================
 echo.
-echo Starting server on port 3002...
-echo API docs: http://localhost:3002
+echo Starting server on port 3005...
+echo API docs: http://localhost:3005
 echo.
 echo Press Ctrl+C to stop
 echo.
