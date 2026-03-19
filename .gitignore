@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# SSH keys and credentials
+*.pem
+*.key
+*credentials*.txt
+*.secret
+.env
+
+# Large model files
+*.gguf
+*.bin
+
+# Vector database (regenerate on clone)
+vector_store/
+
+# Ollama models (pull on clone)
+~/.ollama/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+nohup.out
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OpenEMR specific (if you add local config)
+sites/local/

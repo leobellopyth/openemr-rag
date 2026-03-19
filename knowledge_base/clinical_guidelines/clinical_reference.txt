@@ -1,0 +1,62 @@
+# Clinical Reference Guide
+
+## Hypertension Management (JNC 8 Guidelines)
+- Normal BP: <120/80 mmHg
+- Elevated: 120-129/<80 mmHg
+- Stage 1 HTN: 130-139/80-89 mmHg
+- Stage 2 HTN: >=140/>=90 mmHg
+
+### First-line Treatment
+- Age <60: Target <140/90
+- Age >=60: Target <150/90
+- Diabetes/CKD: Target <130/80
+- ACE inhibitors or ARBs preferred if proteinuria present
+
+### Drug Selection by Comorbidity
+- Heart failure: ACEi/ARB, beta-blocker, diuretic
+- Post-MI: Beta-blocker, ACEi
+- Diabetes: ACEi or ARB (renal protection)
+- CKD: ACEi or ARB (slow progression)
+
+## Diabetes Management (ADA Guidelines 2024)
+### Diagnostic Criteria
+- A1C >= 6.5%
+- Fasting glucose >= 126 mg/dL
+- 2-hour glucose >= 200 mg/dL (OGTT)
+- Random glucose >= 200 mg/dL with symptoms
+
+### Glycemic Targets
+- A1C: <7% for most adults
+- Preprandial glucose: 80-130 mg/dL
+- Postprandial glucose: <180 mg/dL
+
+### Medication Intensification
+- Step 1: Metformin + lifestyle
+- Step 2: Add second agent if A1C remains above target after 3 months
+- Consider GLP-1 RA or SGLT2i for cardiovascular/renal benefits
+
+## Vital Signs Reference
+### Heart Rate
+- Normal: 60-100 bpm
+- Tachycardia: >100 bpm at rest
+- Bradycardia: <60 bpm
+- HR >120 sustained: requires evaluation
+
+### Oxygen Saturation
+- Normal: 95-100%
+- Mild hypoxia: 90-94%
+- Moderate hypoxia: 85-89%
+- Severe hypoxia: <85%
+
+### Respiratory Rate
+- Normal: 12-20 breaths/min
+- Tachypnea: >20 breaths/min
+- Bradypnea: <12 breaths/min
+
+## Red Flags Requiring Immediate Attention
+- SpO2 <90%
+- BP >180/120 (hypertensive emergency)
+- HR >150 or <40 bpm
+- Chest pain with autonomic symptoms
+- Altered mental status
+- Severe shortness of breath

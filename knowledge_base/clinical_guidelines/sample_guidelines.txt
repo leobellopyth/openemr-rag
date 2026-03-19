@@ -1,0 +1,30 @@
+# Sample Clinical Knowledge Base Document
+# Placeholder for actual clinical guidelines
+
+## Drug Interaction Example
+
+### Warfarin and Aspirin Interaction
+- Mechanism: Both drugs affect blood clotting through different mechanisms
+- Warfarin: Inhibits vitamin K-dependent clotting factors
+- Aspirin: Inhibits platelet aggregation
+- Combined effect: Increased risk of bleeding
+- Clinical consideration: Monitor INR closely if combination is necessary
+
+### Metformin and Contrast Dye
+- Context: Patients on metformin undergoing procedures requiring iodinated contrast
+- Risk: Potential for lactic acidosis in patients with renal impairment
+- Recommendation: Check renal function before procedure
+- Timing: Hold metformin 48 hours before and after contrast administration
+
+## Clinical Decision Support Examples
+
+### Blood Pressure Management
+- Target BP for most adults: <130/80 mmHg
+- First-line agents: ACE inhibitors, ARBs, calcium channel blockers
+- Monitoring: Check potassium and creatinine 1-2 weeks after initiation
+
+### Diabetes Management
+- Target HbA1c: <7% for most patients
+- First-line: Metformin
+- Add second agent if not at target after 3 months
+- Consider patient-specific factors (age, comorbidities, hypoglycemia risk)
