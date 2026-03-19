@@ -307,6 +307,47 @@
         .vital-warning { color: var(--warning); }
         .vital-critical { color: var(--error); }
 
+        /* Patient List */
+        .patient-list {
+            margin-bottom: 16px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .patient-list.visible { display: block; }
+
+        .patient-list-item {
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .patient-list-item:hover {
+            background: var(--bg);
+            border-color: var(--primary);
+        }
+
+        .patient-list-item.selected {
+            background: #EBF5FF;
+            border-color: var(--primary);
+        }
+
+        .patient-list-item .name {
+            font-weight: 500;
+        }
+
+        .patient-list-item .meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
         /* Chat Panel */
         .chat-panel {
             background: var(--surface);
@@ -521,9 +562,11 @@
             </div>
             
             <div class="search-box">
-                <input type="text" id="patientId" placeholder="Enter Patient ID (1, 2, or 3)" value="1">
-                <button class="search-btn" id="searchBtn">Search</button>
+                <input type="text" id="patientSearch" placeholder="Search by name or ID...">
+                <button class="search-btn" id="searchBtn">Go</button>
             </div>
+            
+            <div id="patientList" class="patient-list"></div>
 
             <div id="patientCard" class="patient-card empty">
                 <div class="empty-state">
@@ -636,8 +679,9 @@
         let isLoading = false;
 
         // DOM Elements
-        const patientIdInput = document.getElementById('patientId');
+        const patientSearchInput = document.getElementById('patientSearch');
         const searchBtn = document.getElementById('searchBtn');
+        const patientList = document.getElementById('patientList');
         const patientCard = document.getElementById('patientCard');
         const chatMessages = document.getElementById('chatMessages');
         const chatInput = document.getElementById('chatInput');
@@ -652,10 +696,21 @@
         // API URL
         const API_URL = 'http://localhost:3002';
 
+        // Demo patient summaries (for list display)
+        const DEMO_PATIENT_SUMMARIES = {
+            '1': { id: '1', name: 'Sarah Johnson', birthDate: '1978-05-15', gender: 'female' },
+            '2': { id: '2', name: 'Michael Chen', birthDate: '1965-11-22', gender: 'male' },
+            '3': { id: '3', name: 'Emily Rodriguez', birthDate: '1990-03-08', gender: 'female' }
+        };
+
         // Event Listeners
-        searchBtn.addEventListener('click', searchPatient);
-        patientIdInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchPatient();
+        searchBtn.addEventListener('click', searchPatients);
+        patientSearchInput.addEventListener('input', searchPatients);
+        patientSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const firstItem = patientList.querySelector('.patient-list-item');
+                if (firstItem) firstItem.click();
+            }
         });
         sendBtn.addEventListener('click', sendMessage);
         chatInput.addEventListener('keypress', (e) => {
@@ -672,6 +727,9 @@
                 btn.classList.add('active');
                 mode = btn.dataset.mode;
                 updateConnectionStatus();
+                // Refresh patient list when mode changes
+                patientSearchInput.value = '';
+                searchPatients();
             });
         });
 
@@ -799,10 +857,64 @@
             quickBtns.forEach(btn => btn.disabled = false);
         }
 
-        async function searchPatient() {
-            const id = patientIdInput.value.trim();
-            if (!id) return;
+        async function searchPatients() {
+            const searchTerm = patientSearchInput.value.trim();
+            
+            // Filter demo patients by search term
+            let patients = [];
+            
+            if (mode === 'demo') {
+                const allDemo = Object.values(DEMO_PATIENT_SUMMARIES);
+                if (searchTerm) {
+                    patients = allDemo.filter(p => 
+                        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        p.id.includes(searchTerm)
+                    );
+                } else {
+                    patients = allDemo;
+                }
+            } else {
+                // Live mode - fetch from API
+                try {
+                    const res = await fetch(`${API_URL}/patients?mode=live&search=${encodeURIComponent(searchTerm)}`);
+                    if (res.ok) {
+                        patients = await res.json();
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+            
+            renderPatientList(patients);
+        }
 
+        function renderPatientList(patients) {
+            if (patients.length === 0) {
+                patientList.classList.remove('visible');
+                patientList.innerHTML = '';
+                return;
+            }
+            
+            patientList.classList.add('visible');
+            patientList.innerHTML = patients.map(p => `
+                <div class="patient-list-item ${currentPatient?.id === p.id ? 'selected' : ''}" data-id="${p.id}">
+                    <div>
+                        <div class="name">${p.name}</div>
+                        <div class="meta">${p.birthDate} | ${p.gender} | ID: ${p.id}</div>
+                    </div>
+                    <div style="color: var(--primary);">Select ></div>
+                </div>
+            `).join('');
+            
+            // Add click handlers
+            patientList.querySelectorAll('.patient-list-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    loadPatient(item.dataset.id);
+                });
+            });
+        }
+
+        async function loadPatient(id) {
             searchBtn.disabled = true;
             searchBtn.textContent = 'Loading...';
 
@@ -821,25 +933,16 @@
                 if (patient) {
                     currentPatient = patient;
                     renderPatientCard(patient);
-                    addMessage(`Patient ${id} loaded: ${patient.name}`, 'ai');
+                    patientList.classList.remove('visible');
+                    addMessage(`Patient loaded: ${patient.name}`, 'ai');
                 } else {
                     showToast('Patient not found', 'error');
-                    patientCard.innerHTML = `
-                        <div class="empty-state">
-                            <div class="empty-state-icon">!</div>
-                            <p>Patient ${id} not found.<br>Try 1, 2, or 3 for demo.</p>
-                        </div>
-                    `;
-                    patientCard.classList.add('visible');
-                    currentPatient = null;
-                    quickBtns.forEach(btn => btn.disabled = true);
                 }
             } catch (error) {
                 showToast('Connection error. Is the server running?', 'error');
-                console.error(error);
             } finally {
                 searchBtn.disabled = false;
-                searchBtn.textContent = 'Search';
+                searchBtn.textContent = 'Go';
             }
         }
 
@@ -1007,11 +1110,10 @@
             }
         }
 
-        // Auto-load patient 1 on demo mode
+        // Auto-load patient list on demo mode
         if (mode === 'demo') {
             setTimeout(() => {
-                const event = new Event('click');
-                searchBtn.dispatchEvent(event);
+                searchPatients();
             }, 500);
         }
     </script>

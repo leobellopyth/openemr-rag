@@ -192,12 +192,37 @@ def get_patient(patient_id):
 @app.route('/patients', methods=['GET'])
 def list_patients():
     mode = request.args.get('mode', 'demo')
+    search = request.args.get('search', '').lower()
     
     if mode == 'demo':
-        return jsonify(list(DEMO_PATIENTS.values()))
+        patients = list(DEMO_PATIENTS.values())
+        if search:
+            patients = [p for p in patients if 
+                       search in p.get('name', '').lower() or 
+                       search in str(p.get('id', ''))]
+        return jsonify(patients)
     
-    # For live mode, return basic list (would need pagination in production)
-    return jsonify([])
+    # Live mode - search via API
+    client = OpenEMRClient()
+    # Get all patients (simplified - in production would use proper search)
+    patients = []
+    for pid in range(1, 100):  # Demo search first 100 IDs
+        try:
+            resp = requests.get(f"http://localhost:{OPENEMR_API_PORT}/api/patient/{pid}", timeout=2)
+            if resp.status_code == 200:
+                data = resp.json()
+                name = data.get('name', {})
+                full_name = f"{name.get('given', '')} {name.get('family', '')}".lower()
+                if not search or search in full_name or search in str(pid):
+                    patients.append({
+                        "id": data.get("id"),
+                        "name": f"{name.get('given', '')} {name.get('family', '')}".strip(),
+                        "birthDate": str(data.get("birthDate", ""))[:10] if data.get("birthDate") else None,
+                        "gender": data.get("gender", "unknown")
+                    })
+        except:
+            pass
+    return jsonify(patients)
 
 @app.route('/query', methods=['POST'])
 def clinical_query():
