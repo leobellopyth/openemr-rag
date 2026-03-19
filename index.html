@@ -1110,12 +1110,12 @@
             }
         }
 
-        // Auto-load patient list on demo mode
-        if (mode === 'demo') {
-            setTimeout(() => {
+        // Auto-load patient list when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            if (mode === 'demo') {
                 searchPatients();
-            }, 500);
-        }
+            }
+        });
     </script>
 </body>
 </html>
